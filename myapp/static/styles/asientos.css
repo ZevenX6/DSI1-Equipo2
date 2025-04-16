@@ -1,0 +1,218 @@
+/* Estilos generales - conservando tu estructura base */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background-color: #f5f5f5;
+}
+
+/* Contenedor principal del cine */
+.cine-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Encabezado - usando tus colores */
+.cine-header {
+    background-color: #333;
+    color: #fff;
+    padding: 1rem;
+    text-align: center;
+    border-radius: 5px 5px 0 0;
+    margin-bottom: 1.5rem;
+}
+
+.cine-header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.movie-info h2 {
+    margin: 0.5rem 0;
+    color: #fff;
+}
+
+.movie-info p {
+    margin: 0.5rem 0;
+    color: #ddd;
+}
+
+/* Pantalla */
+.screen-container {
+    margin: 1.5rem 0;
+    perspective: 1000px;
+}
+
+.screen {
+    background: linear-gradient(to bottom, #555, #333);
+    height: 20px;
+    width: 80%;
+    margin: 0 auto;
+    transform: rotateX(-30deg);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+    text-align: center;
+    color: #ddd;
+    font-size: 14px;
+    padding-top: 30px;
+}
+
+/* Asientos - adaptados a tu paleta */
+.seats-container {
+    margin: 2rem auto;
+    width: 90%;
+}
+
+.seats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+}
+
+.seat-row {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+}
+
+.row-letter {
+    width: 20px;
+    text-align: center;
+    font-weight: bold;
+    color: #555;
+}
+
+.seat {
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid #ddd;
+}
+
+.seat.available {
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #333;
+}
+
+.seat.available:hover {
+    background-color: #7b68ee;
+    color: white;
+    transform: scale(1.1);
+}
+
+.seat.selected {
+    background-color: #7b68ee;
+    color: white;
+    border-color: #7b68ee;
+}
+
+.seat.reserved {
+    background-color: #333;
+    color: #ddd;
+    cursor: not-allowed;
+}
+
+/* Leyenda */
+.legend {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-item .seat {
+    cursor: default;
+}
+
+.legend-item .seat:hover {
+    transform: none;
+}
+.legend-item:nth-child(2) .seat.selected {
+    background: linear-gradient(to right, #00c6ff, #7b68ee);
+    border: none;
+    color: white; /* Color del número (si lo tiene) */
+}
+
+/* Resumen de selección */
+.selection-summary {
+    background-color: #f9f9f9;
+    padding: 1rem;
+    border-radius: 5px;
+    margin-top: 1.5rem;
+}
+
+.selection-summary h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.5rem;
+}
+
+.selected-seats {
+    margin: 1rem 0;
+    font-size: 1rem;
+    background: linear-gradient(to right, rgba(0, 198, 255, 0.1), rgba(123, 104, 238, 0.1));
+    padding: 0.8rem;
+    border-radius: 5px;
+    border-left: 3px solid #7b68ee;
+}
+
+.total-price {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 1rem 0;
+    background: linear-gradient(to right, #00c6ff, #7b68ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding: 0.2rem 0;
+    display: inline-block;
+}
+
+/* Botón - usando el estilo morado claro */
+.btn-confirm {
+    background: linear-gradient(to right, #00c6ff, #7b68ee);
+    color: white;
+    border: none;
+    padding: 0.8rem;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 100%;
+    font-weight: bold;
+}
+
+.btn-confirm:hover {
+    background: linear-gradient(to right, #00a8e1, #6a5acd);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-confirm:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}

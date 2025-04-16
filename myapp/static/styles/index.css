@@ -1,0 +1,104 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background-color: #f5f5f5;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+nav ul li {
+    margin-left: 1rem;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #fff;
+    font-weight: bold;
+}
+
+nav ul li a:hover {
+    color: #7b68ee; /* Cambio a morado claro */
+}
+
+main {
+    padding: 2rem;
+}
+
+.section {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.peliculas {
+    display: flex;
+    justify-content: space-around;
+}
+
+.pelicula {
+    border: 1px solid #ddd;
+    padding: 1rem;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.pelicula h3 {
+    margin-top: 0;
+}
+
+button {
+    background: linear-gradient(to right, #00c6ff, #7b68ee); /* Degradado de celeste a morado */
+    border: none;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background: linear-gradient(to right, #0096ff, #6a5acd); /* Efecto más oscuro en hover */
+}
+
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 1rem 0;
+    margin-top: 2rem;
+}
+
+.btn-inicio {
+    background: linear-gradient(to right, #00c6ff, #7b68ee); /* Degradado de celeste a morado */
+    color: white;
+    padding: 10px 15px;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.btn-inicio:hover {
+    background: linear-gradient(to right, #0096ff, #6a5acd); /* Efecto más oscuro en hover */
+}
+

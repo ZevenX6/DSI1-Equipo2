@@ -1,0 +1,138 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Películas - CineDot</title>
+    <link rel="stylesheet" href="{% static 'styles/peliculas.css' %}">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1>CineDot</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#agregar-pelicula">Agregar Película</a></li>
+                <li><a href="#tabla-peliculas">Lista de Películas</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <!-- Formulario para agregar / editar películas -->
+        <section id="agregar-pelicula" class="section">
+            <h2>Administrar Película</h2>
+            <form id="form-pelicula" method="post" action="{% if form.instance.id %}{% url 'editar_pelicula' form.instance.id %}{% else %}{% url 'agregar_pelicula' %}{% endif %}">
+                {% csrf_token %}
+                <input type="hidden" id="pelicula-id" name="pelicula_id">
+                
+                <label for="nombre">Nombre:</label>
+                <input type="text" id="nombre" name="nombre" required>
+            
+                <label for="anio">Año:</label>
+                <input type="number" id="anio" name="anio" required min="1900" max="2099">
+            
+                <!-- Géneros como checkboxes -->
+                <fieldset>
+                    <legend>Géneros (Máx. 3):</legend>
+                    {% for code, genero in form.generos.field.choices %}
+                    <label>
+                        <input type="checkbox" name="generos" value="{{ code }}" 
+                               {% if code in form.generos.value %}checked{% endif %}>
+                        {{ genero }}
+                    </label>
+                    {% endfor %}
+                </fieldset>
+            
+                <label for="director">Director:</label>
+                <input type="text" id="director" name="director" required>
+            
+                <label for="imagen">URL de Imagen:</label>
+                <input type="url" id="imagen" name="imagen" required>
+            
+                <label for="trailer">Link al Trailer (YouTube):</label>
+                <input type="url" id="trailer" name="trailer" required>
+            
+                <button type="submit" class="btn-agregar">{% if form.instance.id %}Actualizar{% else %}Agregar{% endif %} Película</button>
+            
+                {% if form.instance.id %}
+                <button type="submit" formaction="{% url 'eliminar_pelicula' form.instance.id %}" class="btn-eliminar">Eliminar Película</button>
+                {% endif %}
+            </form>
+            <!-- Buscador -->
+            <div class="busqueda">
+                <form method="get" action="{% url 'peliculas' %}">
+                    <input type="text" id="buscar" name="q" placeholder="Buscar por nombre, género o director">
+                    <button type="submit">Buscar</button>
+                </form>
+            </div>
+        </section>
+        
+        <!-- Tabla para listar y gestionar películas -->
+        <section id="tabla-peliculas" class="section">
+            <h2>Lista de Películas</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Seleccionar</th>
+                        <th>Nombre</th>
+                        <th>Año</th>
+                        <th>Géneros</th>
+                        <th>Director</th>
+                        <th>Imagen</th>
+                        <th>Trailer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pelicula in peliculas %}
+                    <tr data-id="{{ pelicula.id }}" data-nombre="{{ pelicula.nombre }}" 
+                        data-anio="{{ pelicula.anio }}" data-generos="{{ pelicula.generos }}"
+                        data-director="{{ pelicula.director }}" data-imagen="{{ pelicula.imagen_url }}"
+                        data-trailer="{{ pelicula.trailer_url }}">
+                        <td>
+                            <input type="radio" name="seleccion-pelicula" onclick="seleccionarPelicula(this)">
+                        </td>
+                        <td>{{ pelicula.nombre }}</td>
+                        <td>{{ pelicula.anio }}</td>
+                        <td>{{ pelicula.get_generos_list|join:", " }}</td>
+                        <td>{{ pelicula.director }}</td>
+                        <td>
+                            <a href="{{ pelicula.imagen_url }}" target="_blank" class="img-preview">
+                                <img src="{{ pelicula.imagen_url }}" alt="{{ pelicula.nombre }}" width="60">
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{{ pelicula.trailer_url }}" target="_blank" class="btn-trailer">Ver</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="no-resultados">No hay películas registradas</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+    <footer>
+        <p>© 2025 CineDot. Todos los derechos reservados.</p>
+    </footer>
+
+    <script>
+        function seleccionarPelicula(elemento) {
+            let fila = elemento.closest("tr");
+            document.getElementById("pelicula-id").value = fila.getAttribute("data-id");
+            document.getElementById("nombre").value = fila.getAttribute("data-nombre");
+            document.getElementById("anio").value = fila.getAttribute("data-anio");
+            document.getElementById("director").value = fila.getAttribute("data-director");
+            document.getElementById("imagen").value = fila.getAttribute("data-imagen");
+            document.getElementById("trailer").value = fila.getAttribute("data-trailer");
+
+            // Activar botones de edición y eliminación
+            document.getElementById("editar-pelicula").disabled = false;
+            document.getElementById("eliminar-pelicula").disabled = false;
+        }
+    </script>
+</body>
+</html>

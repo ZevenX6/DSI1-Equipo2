@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineDot - Cartelera</title>
+    <link rel="stylesheet" href="{% static 'styles/index.css' %}">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1>CineDot</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#cartelera">Cartelera</a></li>
+                <li><a href="#comprar">Comprar Boletos</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+                
+                {% if user.is_authenticated %}
+                    {% if user.is_staff %}
+                    <li><a href="{% url 'login' %}" class="admin-btn">Panel Admin</a></li>
+                    {% endif %}
+                    <li class="user-welcome">¡Hola, {{ user.first_name }}!</li>
+                    <li><a href="{% url 'logout' %}" class="logout-btn">Cerrar Sesión</a></li>
+                {% else %}
+                    <li><a href="{% url 'login' %}" class="login-btn">Iniciar Sesión</a></li>
+                    <li><a href="{% url 'registro' %}" class="register-btn">Registrarse</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Cartelera de Películas -->
+        <section id="cartelera" class="section">
+            <h2>Películas en Cartelera</h2>
+            <div class="peliculas-grid">
+                {% for pelicula in peliculas %}
+                <div class="pelicula-card">
+                    <img src="{{ pelicula.imagen_url }}" alt="{{ pelicula.nombre }}" class="pelicula-imagen">
+                    <div class="pelicula-info">
+                        <h3>{{ pelicula.nombre }}</h3>
+                        <p><strong>Género:</strong> {{ pelicula.get_generos_list|join:", " }}</p>
+                        <p><strong>Año:</strong> {{ pelicula.anio }}</p>
+                        <p><strong>Director:</strong> {{ pelicula.director }}</p>
+                        <a href="{{ pelicula.trailer_url }}" target="_blank" class="btn-trailer">Ver Trailer</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        <!-- Sección de Compra -->
+        <section id="comprar" class="section">
+            <h2>Compra tus Boletos</h2>
+            <div class="compra-form">
+                {% if not user.is_authenticated %}
+                <div class="login-alert">
+                    <p>Para comprar boletos, por favor <a href="{% url 'login' %}">inicia sesión</a> o <a href="{% url 'registro' %}">regístrate</a></p>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Información de Contacto -->
+        <section id="contacto" class="section">
+            <h2>Contacto</h2>
+            <div class="contacto-info">
+                <p><i class="icono">📧</i> contacto@cinedot.com</p>
+                <p><i class="icono">📱</i> +503 1234-5678</p>
+                <p><i class="icono">🏠</i> Av. Principal #123, San Salvador</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2025 CineDot. Todos los derechos reservados.</p>
+    </footer>
+</body>
+</html>

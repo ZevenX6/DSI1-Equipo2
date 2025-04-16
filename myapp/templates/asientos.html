@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CinePlus - Selección de Asientos</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles/asientos.css' %}">
+</head>
+<body>
+    <div class="cine-container">
+        <header class="cine-header">
+            <h1>CineDot</h1>
+            <div class="movie-info">
+                <h2>Avengers: Endgame</h2>
+                <p>Sala 5 - Hoy 20:30 - $4.50</p>
+            </div>
+        </header>
+
+        <div class="screen-container">
+            <div class="screen">Pantalla</div>
+        </div>
+
+        <div class="seats-container">
+            <div class="seats-grid">
+                <!-- Fila A -->
+                <div class="seat-row">
+                    <span class="row-letter">A</span>
+                    <div class="seat available" data-seat="A1">1</div>
+                    <div class="seat available" data-seat="A2">2</div>
+                    <div class="seat available" data-seat="A3">3</div>
+                    <div class="seat available" data-seat="A4">4</div>
+                    <div class="seat available" data-seat="A5">5</div>
+                    <div class="seat available" data-seat="A6">6</div>
+                    <div class="seat available" data-seat="A7">7</div>
+                    <div class="seat available" data-seat="A8">8</div>
+                </div>
+                
+                <!-- Fila B -->
+                <div class="seat-row">
+                    <span class="row-letter">B</span>
+                    <div class="seat available" data-seat="B1">1</div>
+                    <div class="seat available" data-seat="B2">2</div>
+                    <div class="seat available" data-seat="B3">3</div>
+                    <div class="seat reserved" data-seat="B4">4</div>
+                    <div class="seat reserved" data-seat="B5">5</div>
+                    <div class="seat available" data-seat="B6">6</div>
+                    <div class="seat available" data-seat="B7">7</div>
+                    <div class="seat available" data-seat="B8">8</div>
+                </div>
+                
+                <!-- Fila C -->
+                <div class="seat-row">
+                    <span class="row-letter">C</span>
+                    <div class="seat available" data-seat="C1">1</div>
+                    <div class="seat available" data-seat="C2">2</div>
+                    <div class="seat available" data-seat="C3">3</div>
+                    <div class="seat available" data-seat="C4">4</div>
+                    <div class="seat available" data-seat="C5">5</div>
+                    <div class="seat available" data-seat="C6">6</div>
+                    <div class="seat available" data-seat="C7">7</div>
+                    <div class="seat available" data-seat="C8">8</div>
+                </div>
+                
+                <!-- Fila D -->
+                <div class="seat-row">
+                    <span class="row-letter">D</span>
+                    <div class="seat available" data-seat="D1">1</div>
+                    <div class="seat available" data-seat="D2">2</div>
+                    <div class="seat available" data-seat="D3">3</div>
+                    <div class="seat available" data-seat="D4">4</div>
+                    <div class="seat reserved" data-seat="D5">5</div>
+                    <div class="seat reserved" data-seat="D6">6</div>
+                    <div class="seat available" data-seat="D7">7</div>
+                    <div class="seat available" data-seat="D8">8</div>
+                </div>
+                
+                <!-- Fila E -->
+                <div class="seat-row">
+                    <span class="row-letter">E</span>
+                    <div class="seat available" data-seat="E1">1</div>
+                    <div class="seat available" data-seat="E2">2</div>
+                    <div class="seat available" data-seat="E3">3</div>
+                    <div class="seat available" data-seat="E4">4</div>
+                    <div class="seat available" data-seat="E5">5</div>
+                    <div class="seat available" data-seat="E6">6</div>
+                    <div class="seat available" data-seat="E7">7</div>
+                    <div class="seat available" data-seat="E8">8</div>
+                </div>
+            </div>
+        </div>
+<!-- Estructura HTML (no requiere cambios) -->
+<div class="legend">
+    <div class="legend-item">
+        <div class="seat available"></div> <!-- Mantiene color original -->
+        <span>Disponible</span>
+    </div>
+    <div class="legend-item">
+        <div class="seat selected"></div> <!-- Ahora con degradado -->
+        <span>Seleccionado</span>
+    </div>
+    <div class="legend-item">
+        <div class="seat reserved"></div> <!-- Mantiene color original -->
+        <span>Ocupado</span>
+    </div>
+</div>
+
+        <div class="selection-summary">
+            <h3>Tu selección:</h3>
+            <div class="selected-seats" id="selected-seats">Ningún asiento seleccionado</div>
+            <div class="total-price" id="total-price">Total: $0</div>
+            <button class="btn-confirm">Confirmar Reserva</button>
+        </div>
+    </div>
+
+    <script src="cine.js"></script>
+</body>
+</html>
