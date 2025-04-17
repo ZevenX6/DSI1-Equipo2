@@ -1,21 +1,18 @@
+import json
 from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-
 from DSI2025 import settings
 from .forms import *
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
-from django.contrib.auth.forms import AuthenticationForm 
-from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from .models import Pelicula
-from .forms import PeliculaForm
-from myapp import models
-from django.db.models import Q
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
 
 # views.py
 from .models import Pelicula
+from myapp import models
 
 def index(request):
     peliculas = Pelicula.objects.all().order_by('-fecha_creacion')[:10]  # Últimas 10 películas
@@ -57,49 +54,92 @@ def asientos(request):
 
 
 
-# 📌 Leer y listar películas
+
+# Diccionario de géneros con nombres completos
+GENERO_CHOICES_DICT = {
+    "AC": "Acción",
+    "DR": "Drama",
+    "CO": "Comedia",
+    "TE": "Terror",
+    "CF": "Ciencia Ficción",
+    "RO": "Romance",
+    "DO": "Documental",
+}
+
+def convertir_generos(codigos_generos):
+    """Convierte códigos de género a nombres completos"""
+    if not codigos_generos:
+        return []
+    return [GENERO_CHOICES_DICT.get(codigo.strip(), "Desconocido") 
+            for codigo in codigos_generos.split(",")]
+
+@csrf_exempt
 def peliculas(request):
-    query = request.GET.get('q', '').strip()
-    peliculas = Pelicula.objects.all()
+    if request.method == 'GET':
+        query = request.GET.get("search", "")
+        peliculas_list = Pelicula.objects.filter(nombre__icontains=query) if query else Pelicula.objects.all()
 
-    if query:
-        peliculas = peliculas.filter(nombre__icontains=query)
+        peliculas_data = []
+        for pelicula in peliculas_list:
+            generos_nombres = convertir_generos(pelicula.generos)
+            
+            pelicula_data = {
+                "nombre": pelicula.nombre,
+                "anio": pelicula.anio,
+                "director": pelicula.director,
+                "imagen_url": pelicula.imagen_url,
+                "trailer_url": pelicula.trailer_url,
+                # Dos formatos para máxima compatibilidad
+                "generos": ", ".join(generos_nombres),  # String completo
+                "get_generos_list": generos_nombres,     # Lista para |join
+                # Mantener el original para referencia
+                "generos_original": pelicula.generos,
+            }
+            peliculas_data.append(pelicula_data)
 
-    form = PeliculaForm()
-    return render(request, 'peliculas.html', {'peliculas': peliculas, 'form': form})
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse(peliculas_data, safe=False)
 
-# 📌 Crear nueva película
-def agregar_pelicula(request):
-    if request.method == 'POST':
-        form = PeliculaForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('peliculas')  # Redirige a la lista de películas
+        # Renderizar para index.html (Cartelera pública)
+        else:
+            return render(request, "index.html", {
+                "peliculas": peliculas_data,
+                "titulo": "Bienvenido al proyecto Django"
+            })
 
-    form = PeliculaForm()
-    return render(request, 'peliculas.html', {'form': form})
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            generos_seleccionados = data.get("generos", [])
 
-# 📌 Editar una película
-def editar_pelicula(request, pelicula_id):
-    pelicula = get_object_or_404(Pelicula, id=pelicula_id)
+            # Validar máximo 3 géneros
+            if len(generos_seleccionados) > 3:
+                return JsonResponse({"error": "Solo puedes seleccionar hasta 3 géneros."}, status=400)
 
-    if request.method == 'POST':
-        form = PeliculaForm(request.POST, instance=pelicula)
-        if form.is_valid():
-            form.save()
-            return redirect('peliculas')
+            # Crear nueva película (guarda códigos de género, ej: "AC,DR")
+            nueva_pelicula = Pelicula.objects.create(
+                nombre=data["nombre"],
+                anio=data["anio"],
+                director=data["director"],
+                generos=",".join(generos_seleccionados),
+                imagen_url=data["imagen_url"],
+                trailer_url=data["trailer_url"]
+            )
+            return JsonResponse({"message": "Película guardada con éxito!"})
 
-    form = PeliculaForm(instance=pelicula)
-    return render(request, 'peliculas.html', {'form': form, 'pelicula': pelicula})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
 
-# 📌 Eliminar una película
-def eliminar_pelicula(request, pelicula_id):
-    pelicula = get_object_or_404(Pelicula, id=pelicula_id)
+    elif request.method == "DELETE":
+        try:
+            data = json.loads(request.body)
+            nombre_pelicula = data.get("nombre")
+            pelicula = Pelicula.objects.get(nombre=nombre_pelicula)
+            pelicula.delete()
+            return JsonResponse({"message": "Película eliminada correctamente"})
+        except Pelicula.DoesNotExist:
+            return JsonResponse({"error": "Película no encontrada"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
 
-    if request.method == 'POST':
-        pelicula.delete()
-        return redirect('peliculas')
-
-    return render(request, 'confirmar_eliminar.html', {'pelicula': pelicula})
-
-
+    return JsonResponse({"error": "Método no permitido"}, status=405)

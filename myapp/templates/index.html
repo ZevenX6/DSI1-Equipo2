@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CineDot - Cartelera</title>
     <link rel="stylesheet" href="{% static 'styles/index.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <header>
@@ -26,7 +27,6 @@
                     <li><a href="{% url 'logout' %}" class="logout-btn">Cerrar Sesión</a></li>
                 {% else %}
                     <li><a href="{% url 'login' %}" class="login-btn">Iniciar Sesión</a></li>
-                    <li><a href="{% url 'registro' %}" class="register-btn">Registrarse</a></li>
                 {% endif %}
             </ul>
         </nav>
@@ -35,41 +35,49 @@
     <main>
         <!-- Cartelera de Películas -->
         <section id="cartelera" class="section">
-            <h2>Películas en Cartelera</h2>
+            <h2 class="section-title">Películas en Cartelera</h2>
+            
             <div class="peliculas-grid">
                 {% for pelicula in peliculas %}
                 <div class="pelicula-card">
-                    <img src="{{ pelicula.imagen_url }}" alt="{{ pelicula.nombre }}" class="pelicula-imagen">
+                    <div class="poster-container">
+                        <img src="{{ pelicula.imagen_url }}" alt="{{ pelicula.nombre }}" class="movie-poster">
+                    </div>
                     <div class="pelicula-info">
-                        <h3>{{ pelicula.nombre }}</h3>
-                        <p><strong>Género:</strong> {{ pelicula.get_generos_list|join:", " }}</p>
-                        <p><strong>Año:</strong> {{ pelicula.anio }}</p>
-                        <p><strong>Director:</strong> {{ pelicula.director }}</p>
-                        <a href="{{ pelicula.trailer_url }}" target="_blank" class="btn-trailer">Ver Trailer</a>
+                        <h3 class="movie-title">{{ pelicula.nombre }}</h3>
+                        <div class="movie-details">
+                            <p><span class="detail-label">Género:</span> {{ pelicula.get_generos_list|join:", " }}</p>
+                            <p><span class="detail-label">Año:</span> {{ pelicula.anio }}</p>
+                            <p><span class="detail-label">Director:</span> {{ pelicula.director }}</p>
+                        </div>
+                        <a href="{{ pelicula.trailer_url }}" target="_blank" class="trailer-btn">
+                            <i class="fab fa-youtube"></i> Ver Tráiler
+                        </a>
                     </div>
                 </div>
                 {% endfor %}
             </div>
         </section>
+
         <!-- Sección de Compra -->
         <section id="comprar" class="section">
-            <h2>Compra tus Boletos</h2>
+            <h2 class="section-title">Compra tus Boletos</h2>
             <div class="compra-form">
                 {% if not user.is_authenticated %}
                 <div class="login-alert">
-                    <p>Para comprar boletos, por favor <a href="{% url 'login' %}">inicia sesión</a> o <a href="{% url 'registro' %}">regístrate</a></p>
+                    <p>Para comprar boletos, por favor <a href="{% url 'login' %}">inicia sesión</a></p>
                 </div>
                 {% endif %}
             </div>
         </section>
 
-        <!-- Información de Contacto -->
+        <!-- Sección de Contacto -->
         <section id="contacto" class="section">
-            <h2>Contacto</h2>
+            <h2 class="section-title">Contacto</h2>
             <div class="contacto-info">
-                <p><i class="icono">📧</i> contacto@cinedot.com</p>
-                <p><i class="icono">📱</i> +503 1234-5678</p>
-                <p><i class="icono">🏠</i> Av. Principal #123, San Salvador</p>
+                <p><i class="icono fas fa-envelope"></i> contacto@cinedot.com</p>
+                <p><i class="icono fas fa-phone"></i> +503 1234-5678</p>
+                <p><i class="icono fas fa-map-marker-alt"></i> Av. Principal #123, San Salvador</p>
             </div>
         </section>
     </main>

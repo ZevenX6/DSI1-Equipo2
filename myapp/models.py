@@ -22,11 +22,14 @@ class Pelicula(models.Model):
     director = models.CharField(max_length=255)
     imagen_url = models.URLField()
     trailer_url = models.URLField()
-    generos = models.CharField(max_length=255)  # Se almacena como texto separado por comas
-    fecha_creacion = models.DateTimeField(auto_now_add=True)  # ✅ Nuevo campo añadido
+    generos = models.CharField(max_length=255)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     def get_generos_list(self):
         return self.generos.split(",") if self.generos else []
 
     def __str__(self):
         return self.nombre
+
+    class Meta:
+        db_table = 'peliculas'  # ✨ Esto define el nombre de la tabla
