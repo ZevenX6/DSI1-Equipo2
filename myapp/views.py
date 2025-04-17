@@ -102,7 +102,7 @@ def peliculas(request):
 
         # Renderizar para index.html (Cartelera pública)
         else:
-            return render(request, "index.html", {
+            return render(request, "peliculas.html", {
                 "peliculas": peliculas_data,
                 "titulo": "Bienvenido al proyecto Django"
             })
