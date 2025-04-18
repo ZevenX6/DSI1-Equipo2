@@ -6,28 +6,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Películas</title>
     <link rel="stylesheet" href="{% static 'styles/peliculas.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <h1>Gestión de Películas</h1>
+        <h1><i class="fas fa-film"></i> Gestión de Películas</h1>
         
         <!-- Formulario CRUD -->
         <div class="form-container">
             <form id="pelicula-form">
                 {% csrf_token %}
                 <input type="hidden" id="accion" name="accion" value="crear">
+                <input type="hidden" id="nombre-original" name="nombre_original">
                 
                 <div class="form-group">
-                    <label for="nombre">Nombre:</label>
+                    <label for="nombre"><i class="fas fa-heading"></i> Nombre:</label>
                     <input type="text" id="nombre" name="nombre" required class="form-control">
                 </div>
                 
                 <div class="form-group">
-                    <label for="anio">Año:</label>
+                    <label for="anio"><i class="fas fa-calendar-alt"></i> Año:</label>
                     <input type="number" id="anio" name="anio" min="1900" max="2099" required class="form-control">
                 </div>
+                
                 <div class="form-group">
-                    <label>Géneros (Máx. 3):</label>
+                    <label><i class="fas fa-tags"></i> Géneros (Máx. 3):</label>
                     <div class="generos-container">
                         <label class="genero-checkbox"><input type="checkbox" name="generos" value="AC"> Acción</label>
                         <label class="genero-checkbox"><input type="checkbox" name="generos" value="DR"> Drama</label>
@@ -40,63 +43,80 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="director">Director:</label>
+                    <label for="director"><i class="fas fa-user-tie"></i> Director:</label>
                     <input type="text" id="director" name="director" required class="form-control">
                 </div>
                 
                 <div class="form-group">
-                    <label for="imagen_url">URL de Imagen:</label>
+                    <label for="imagen_url"><i class="fas fa-image"></i> URL de Imagen:</label>
                     <input type="url" id="imagen_url" name="imagen_url" required class="form-control">
                 </div>
                 
                 <div class="form-group">
-                    <label for="trailer_url">URL de Trailer:</label>
+                    <label for="trailer_url"><i class="fab fa-youtube"></i> URL de Trailer:</label>
                     <input type="url" id="trailer_url" name="trailer_url" required class="form-control">
                 </div>
                 
                 <div class="form-actions">
-                    <button type="submit" id="btn-guardar" class="btn btn-primary">Guardar</button>
-                    <button type="button" id="btn-cancelar" class="btn" style="display:none;">Cancelar</button>
+                    <button type="submit" id="btn-guardar" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                    <button type="button" id="btn-cancelar" class="btn btn-secondary" style="display:none;">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="button" id="btn-guardar-cambios" class="btn btn-warning" style="display:none;">
+                        <i class="fas fa-sync-alt"></i> Guardar Cambios
+                    </button>
                 </div>
             </form>
         </div>
         
         <!-- Mensajes -->
-        <div id="mensajes"></div>
+        <div id="mensajes" class="message-container"></div>
         
         <!-- Buscador -->
         <div class="search-container">
             <input type="text" id="input-buscar" placeholder="Buscar por nombre o director" class="form-control">
-            <button id="btn-buscar" class="btn">Buscar</button>
-            <button id="btn-limpiar" class="btn">Mostrar Todas</button>
+            <button id="btn-buscar" class="btn btn-info">
+                <i class="fas fa-search"></i> Buscar
+            </button>
+            <button id="btn-limpiar" class="btn btn-secondary">
+                <i class="fas fa-broom"></i> Mostrar Todas
+            </button>
         </div>
         
         <!-- Tabla de Películas -->
-        <table id="tabla-peliculas">
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Año</th>
-                    <th>Director</th>
-                    <th>Géneros</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for pelicula in peliculas %}
-                <tr data-nombre="{{ pelicula.nombre }}">
-                    <td>{{ pelicula.nombre }}</td>
-                    <td>{{ pelicula.anio }}</td>
-                    <td>{{ pelicula.director }}</td>
-                    <td>{{ pelicula.get_generos_list|join:", " }}</td>
-                    <td>
-                        <button class="btn-editar" data-nombre="{{ pelicula.nombre }}">Editar</button>
-                        <button class="btn-eliminar" data-nombre="{{ pelicula.nombre }}">Eliminar</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table id="tabla-peliculas" class="movie-table">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-heading"></i> Nombre</th>
+                        <th><i class="fas fa-calendar-alt"></i> Año</th>
+                        <th><i class="fas fa-user-tie"></i> Director</th>
+                        <th><i class="fas fa-tags"></i> Géneros</th>
+                        <th><i class="fas fa-cog"></i> Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pelicula in peliculas %}
+                    <tr data-nombre="{{ pelicula.nombre }}">
+                        <td>{{ pelicula.nombre }}</td>
+                        <td>{{ pelicula.anio }}</td>
+                        <td>{{ pelicula.director }}</td>
+                        <td>{{ pelicula.get_generos_list|join:", " }}</td>
+                        <td class="action-buttons">
+                            <button type="button" class="btn btn-edit" data-nombre="{{ pelicula.nombre }}">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button type="button" class="btn btn-delete" data-nombre="{{ pelicula.nombre }}">
+                                <i class="fas fa-trash-alt"></i> Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script src="{% static 'js/guardar_pelicula.js' %}"></script>
