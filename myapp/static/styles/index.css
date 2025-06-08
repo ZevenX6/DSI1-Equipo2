@@ -66,12 +66,14 @@ main {
 }
 
 /* Películas en formato de lista */
+/* Contenedor de películas */
 .peliculas-grid {
-    max-width: 500px; /* Reducido aún más */
+    max-width: 1200px; /* Más amplio para mostrar más películas */
     margin: 0 auto; /* Centrado */
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Distribuye en columnas */
-    gap: 1rem; /* Espacio entre películas */
+    grid-template-columns: repeat(5, 1fr); /* Ahora puede contener hasta 5 películas por fila */
+    gap: 1rem; /* Espacio entre tarjetas */
+    justify-content: center; /* Centrado */
 }
 
 /* Tarjetas de películas */

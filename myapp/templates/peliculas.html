@@ -12,113 +12,180 @@
     <div class="container">
         <h1><i class="fas fa-film"></i> Gestión de Películas</h1>
         
+        <!-- Mostrar mensajes -->
+        {% if messages %}
+        <div class="message-container">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
         <!-- Formulario CRUD -->
         <div class="form-container">
-            <form id="pelicula-form">
+            <form method="POST" action="{% url 'peliculas' %}">
                 {% csrf_token %}
-                <input type="hidden" id="accion" name="accion" value="crear">
-                <input type="hidden" id="nombre-original" name="nombre_original">
+                
+                {% if pelicula_editar %}
+                <input type="hidden" name="accion" value="editar">
+                <input type="hidden" name="nombre_original" value="{{ pelicula_editar.nombre }}">
+                <h2><i class="fas fa-edit"></i> Editar Película</h2>
+                {% else %}
+                <input type="hidden" name="accion" value="crear">
+                <h2><i class="fas fa-plus-circle"></i> Nueva Película</h2>
+                {% endif %}
                 
                 <div class="form-group">
                     <label for="nombre"><i class="fas fa-heading"></i> Nombre:</label>
-                    <input type="text" id="nombre" name="nombre" required class="form-control">
+                    <input type="text" id="nombre" name="nombre" 
+                           value="{{ pelicula_editar.nombre|default:'' }}" required class="form-control">
                 </div>
                 
                 <div class="form-group">
                     <label for="anio"><i class="fas fa-calendar-alt"></i> Año:</label>
-                    <input type="number" id="anio" name="anio" min="1900" max="2099" required class="form-control">
+                    <input type="number" id="anio" name="anio" min="1900" max="2099" 
+                           value="{{ pelicula_editar.anio|default:'' }}" required class="form-control">
                 </div>
                 
                 <div class="form-group">
                     <label><i class="fas fa-tags"></i> Géneros (Máx. 3):</label>
                     <div class="generos-container">
-                        <label class="genero-checkbox"><input type="checkbox" name="generos" value="AC"> Acción</label>
-                        <label class="genero-checkbox"><input type="checkbox" name="generos" value="DR"> Drama</label>
-                        <label class="genero-checkbox"><input type="checkbox" name="generos" value="CO"> Comedia</label>
-                        <label class="genero-checkbox"><input type="checkbox" name="generos" value="TE"> Terror</label>
-                        <label class="genero-checkbox"><input type="checkbox" name="generos" value="CF"> Ciencia Ficción</label>
-                        <label class="genero-checkbox"><input type="checkbox" name="generos" value="RO"> Romance</label>
-                        <label class="genero-checkbox"><input type="checkbox" name="generos" value="DO"> Documental</label>
+                        {% for genero_codigo, genero_nombre in GENERO_CHOICES_DICT.items %}
+                        <label class="genero-checkbox">
+                            <input type="checkbox" name="generos" value="{{ genero_codigo }}"
+                                   {% if pelicula_editar and genero_codigo in pelicula_editar.get_generos_list %}checked{% endif %}>
+                            {{ genero_nombre }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-clock"></i> Horarios Disponibles:</label>
+                    <div class="checkbox-container">
+                        {% for horario in HORARIOS_DISPONIBLES %}
+                        <label>
+                            <input type="checkbox" name="horarios" value="{{ horario }}"
+                                   {% if pelicula_editar and horario in pelicula_editar.get_horarios_list %}checked{% endif %}>
+                            {{ horario }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-door-open"></i> Salas Disponibles:</label>
+                    <div class="checkbox-container">
+                        {% for sala in SALAS_DISPONIBLES %}
+                        <label>
+                            <input type="checkbox" name="salas" value="{{ sala }}"
+                                   {% if pelicula_editar and sala in pelicula_editar.get_salas_list %}checked{% endif %}>
+                            {{ sala }}
+                        </label>
+                        {% endfor %}
                     </div>
                 </div>
                 
                 <div class="form-group">
                     <label for="director"><i class="fas fa-user-tie"></i> Director:</label>
-                    <input type="text" id="director" name="director" required class="form-control">
+                    <input type="text" id="director" name="director" 
+                           value="{{ pelicula_editar.director|default:'' }}" required class="form-control">
                 </div>
                 
                 <div class="form-group">
                     <label for="imagen_url"><i class="fas fa-image"></i> URL de Imagen:</label>
-                    <input type="url" id="imagen_url" name="imagen_url" required class="form-control">
+                    <input type="url" id="imagen_url" name="imagen_url" 
+                           value="{{ pelicula_editar.imagen_url|default:'' }}" required class="form-control">
                 </div>
                 
                 <div class="form-group">
                     <label for="trailer_url"><i class="fab fa-youtube"></i> URL de Trailer:</label>
-                    <input type="url" id="trailer_url" name="trailer_url" required class="form-control">
+                    <input type="url" id="trailer_url" name="trailer_url" 
+                           value="{{ pelicula_editar.trailer_url|default:'' }}" required class="form-control">
                 </div>
                 
                 <div class="form-actions">
-                    <button type="submit" id="btn-guardar" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Guardar
-                    </button>
-                    <button type="button" id="btn-cancelar" class="btn btn-secondary" style="display:none;">
-                        <i class="fas fa-times"></i> Cancelar
-                    </button>
-                    <button type="button" id="btn-guardar-cambios" class="btn btn-warning" style="display:none;">
+                    {% if pelicula_editar %}
+                    <button type="submit" class="btn btn-warning">
                         <i class="fas fa-sync-alt"></i> Guardar Cambios
                     </button>
+                    <a href="{% url 'peliculas' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    {% else %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                    {% endif %}
                 </div>
             </form>
         </div>
         
-        <!-- Mensajes -->
-        <div id="mensajes" class="message-container"></div>
-        
         <!-- Buscador -->
         <div class="search-container">
-            <input type="text" id="input-buscar" placeholder="Buscar por nombre o director" class="form-control">
-            <button id="btn-buscar" class="btn btn-info">
-                <i class="fas fa-search"></i> Buscar
-            </button>
-            <button id="btn-limpiar" class="btn btn-secondary">
-                <i class="fas fa-broom"></i> Mostrar Todas
-            </button>
+            <form method="GET" action="{% url 'peliculas' %}">
+                <input type="text" name="busqueda" value="{{ busqueda }}" 
+                       placeholder="Buscar por nombre o director" class="form-control">
+                <button type="submit" class="btn btn-info">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                {% if busqueda %}
+                <a href="{% url 'peliculas' %}" class="btn btn-secondary">
+                    <i class="fas fa-broom"></i> Mostrar Todas
+                </a>
+                {% endif %}
+            </form>
         </div>
         
         <!-- Tabla de Películas -->
         <div class="table-responsive">
-            <table id="tabla-peliculas" class="movie-table">
+            <table class="movie-table">
                 <thead>
                     <tr>
                         <th><i class="fas fa-heading"></i> Nombre</th>
                         <th><i class="fas fa-calendar-alt"></i> Año</th>
                         <th><i class="fas fa-user-tie"></i> Director</th>
                         <th><i class="fas fa-tags"></i> Géneros</th>
+                        <th><i class="fas fa-clock"></i> Horarios</th>
+                        <th><i class="fas fa-door-open"></i> Salas</th>
                         <th><i class="fas fa-cog"></i> Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for pelicula in peliculas %}
-                    <tr data-nombre="{{ pelicula.nombre }}">
+                    <tr>
                         <td>{{ pelicula.nombre }}</td>
                         <td>{{ pelicula.anio }}</td>
                         <td>{{ pelicula.director }}</td>
                         <td>{{ pelicula.get_generos_list|join:", " }}</td>
+                        <td>{{ pelicula.get_horarios_list|join:", " }}</td>
+                        <td>{{ pelicula.get_salas_list|join:", " }}</td>
                         <td class="action-buttons">
-                            <button type="button" class="btn btn-edit" data-nombre="{{ pelicula.nombre }}">
+                            <a href="{% url 'peliculas' %}?editar={{ pelicula.nombre|urlencode }}" 
+                               class="btn btn-edit">
                                 <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button type="button" class="btn btn-delete" data-nombre="{{ pelicula.nombre }}">
-                                <i class="fas fa-trash-alt"></i> Eliminar
-                            </button>
+                            </a>
+                            <form method="POST" action="{% url 'peliculas' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="accion" value="eliminar">
+                                <input type="hidden" name="nombre" value="{{ pelicula.nombre }}">
+                                <button type="submit" class="btn btn-delete" 
+                                        onclick="return confirm('¿Estás seguro de eliminar esta película?');">
+                                    <i class="fas fa-trash-alt"></i> Eliminar
+                                </button>
+                            </form>
                         </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">No hay películas registradas</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-
-    <script src="{% static 'js/guardar_pelicula.js' %}"></script>
 </body>
 </html>

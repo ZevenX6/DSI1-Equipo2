@@ -1,219 +1,75 @@
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener('DOMContentLoaded', function() {
     // Elementos del DOM
-    const formulario = document.getElementById("pelicula-form");
-    const btnGuardar = document.getElementById("btn-guardar");
-    const btnGuardarCambios = document.getElementById("btn-guardar-cambios");
-    const btnCancelar = document.getElementById("btn-cancelar");
-    const btnBuscar = document.getElementById("btn-buscar");
-    const btnLimpiar = document.getElementById("btn-limpiar");
-    const inputBuscar = document.getElementById("input-buscar");
-    const mensajesDiv = document.getElementById("mensajes");
-    const tablaPeliculas = document.getElementById("tabla-peliculas");
-    const tbody = tablaPeliculas.querySelector("tbody");
-    const nombreOriginalInput = document.getElementById("nombre-original");
+    const form = document.getElementById('pelicula-form');
+    const btnGuardar = document.getElementById('btn-guardar');
+    const btnCancelar = document.getElementById('btn-cancelar');
+    const btnGuardarCambios = document.getElementById('btn-guardar-cambios');
+    const inputBuscar = document.getElementById('input-buscar');
+    const btnBuscar = document.getElementById('btn-buscar');
+    const btnLimpiar = document.getElementById('btn-limpiar');
+    const mensajesDiv = document.getElementById('mensajes');
+    const tablaPeliculas = document.getElementById('tabla-peliculas').querySelector('tbody');
 
     // Variables de estado
-    let peliculaSeleccionada = null;
+    let modoEdicion = false;
+    let nombreOriginal = '';
 
-    // Funciones auxiliares
-    function mostrarMensaje(texto, tipo = 'success') {
-        mensajesDiv.innerHTML = `<div class="alert alert-${tipo}">${texto}</div>`;
-        setTimeout(() => mensajesDiv.innerHTML = '', 3000);
-    }
-
-    function resetFormulario() {
-        formulario.reset();
-        nombreOriginalInput.value = "";
-        btnGuardar.style.display = "inline-block";
-        btnGuardarCambios.style.display = "none";
-        btnCancelar.style.display = "none";
-        peliculaSeleccionada = null;
-    }
+    // Cargar películas al iniciar
+    cargarPeliculas();
 
     // Event Listeners
-    formulario.addEventListener("submit", function(e) {
+    form.addEventListener('submit', function(e) {
         e.preventDefault();
-        
-        const formData = new FormData(formulario);
-        const jsonData = {};
-        formData.forEach((value, key) => { jsonData[key] = value });
-
-        // Obtener géneros seleccionados
-        jsonData["generos"] = Array.from(document.querySelectorAll("input[name='generos']:checked"))
-                                 .map(checkbox => checkbox.value);
-
-        // Validar máximo 3 géneros
-        if (jsonData["generos"].length > 3) {
-            mostrarMensaje("Solo puedes seleccionar hasta 3 géneros.", 'danger');
-            return;
-        }
-
-        fetch("/peliculas/", {
-            method: "POST",
-            body: JSON.stringify(jsonData),
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            mostrarMensaje(data.message || "Película guardada con éxito!");
-            cargarPeliculas();
-            resetFormulario();
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            mostrarMensaje("Error al guardar la película", 'danger');
-        });
-    });
-
-    btnGuardarCambios.addEventListener("click", function() {
-        const formData = new FormData(formulario);
-        const jsonData = {};
-        formData.forEach((value, key) => { jsonData[key] = value });
-
-        // Obtener géneros seleccionados
-        jsonData["generos"] = Array.from(document.querySelectorAll("input[name='generos']:checked"))
-                                 .map(checkbox => checkbox.value);
-        jsonData["nombre_original"] = nombreOriginalInput.value;
-
-        // Validar máximo 3 géneros
-        if (jsonData["generos"].length > 3) {
-            mostrarMensaje("Solo puedes seleccionar hasta 3 géneros.", 'danger');
-            return;
-        }
-
-        fetch("/peliculas/", {
-            method: "POST",
-            body: JSON.stringify(jsonData),
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-                "X-Method": "PUT"
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            mostrarMensaje(data.message || "Película actualizada con éxito!");
-            cargarPeliculas();
-            resetFormulario();
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            mostrarMensaje("Error al actualizar la película", 'danger');
-        });
-    });
-
-    btnCancelar.addEventListener("click", resetFormulario);
-
-    btnBuscar.addEventListener("click", function() {
-        const query = inputBuscar.value.trim();
-        if (query) {
-            cargarPeliculas(query);
+        if (modoEdicion) {
+            guardarCambios();
+        } else {
+            crearPelicula();
         }
     });
 
-    btnLimpiar.addEventListener("click", function() {
-        inputBuscar.value = "";
+    btnCancelar.addEventListener('click', cancelarEdicion);
+    btnBuscar.addEventListener('click', buscarPeliculas);
+    btnLimpiar.addEventListener('click', function() {
+        inputBuscar.value = '';
         cargarPeliculas();
     });
 
-    // Delegación de eventos para los botones de la tabla
-    tbody.addEventListener("click", function(e) {
-        if (e.target.classList.contains("btn-delete") || e.target.closest(".btn-delete")) {
-            const boton = e.target.classList.contains("btn-delete") ? e.target : e.target.closest(".btn-delete");
-            const nombrePelicula = boton.dataset.nombre;
-            
-            if (confirm(`¿Estás seguro de eliminar la película "${nombrePelicula}"?`)) {
-                fetch("/peliculas/", {
-                    method: "DELETE",
-                    body: JSON.stringify({ nombre: nombrePelicula }),
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    mostrarMensaje(data.message || "Película eliminada correctamente");
-                    cargarPeliculas();
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                    mostrarMensaje("Error al eliminar la película", 'danger');
-                });
-            }
-        }
-        
-        if (e.target.classList.contains("btn-edit") || e.target.closest(".btn-edit")) {
-            const boton = e.target.classList.contains("btn-edit") ? e.target : e.target.closest(".btn-edit");
-            peliculaSeleccionada = boton.dataset.nombre;
-
-            fetch(`/peliculas/?search=${encodeURIComponent(peliculaSeleccionada)}`, { 
-                headers: { "X-Requested-With": "XMLHttpRequest" } 
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.length > 0) {
-                    const pelicula = data[0];
-                    
-                    document.getElementById("nombre").value = pelicula.nombre;
-                    document.getElementById("anio").value = pelicula.anio;
-                    document.getElementById("director").value = pelicula.director;
-                    document.getElementById("imagen_url").value = pelicula.imagen_url;
-                    document.getElementById("trailer_url").value = pelicula.trailer_url;
-                    nombreOriginalInput.value = pelicula.nombre;
-
-                    // Limpiar checkboxes primero
-                    document.querySelectorAll("input[name='generos']").forEach(checkbox => {
-                        checkbox.checked = false;
-                    });
-
-                    // Seleccionar los géneros correctos
-                    const generos = pelicula.generos.split(",");
-                    generos.forEach(genero => {
-                        const checkbox = document.querySelector(`input[name='generos'][value='${genero.trim()}']`);
-                        if (checkbox) checkbox.checked = true;
-                    });
-
-                    // Cambiar a modo edición
-                    btnGuardar.style.display = "none";
-                    btnGuardarCambios.style.display = "inline-block";
-                    btnCancelar.style.display = "inline-block";
-                    
-                    mostrarMensaje(`Editando: ${pelicula.nombre}`, 'info');
-                }
-            })
-            .catch(error => {
-                console.error("Error al cargar película:", error);
-                mostrarMensaje("Error al cargar la película", 'danger');
-            });
+    // Delegación de eventos para botones de editar/eliminar
+    tablaPeliculas.addEventListener('click', function(e) {
+        if (e.target.classList.contains('btn-edit') || e.target.closest('.btn-edit')) {
+            const btn = e.target.classList.contains('btn-edit') ? e.target : e.target.closest('.btn-edit');
+            editarPelicula(btn.dataset.nombre);
+        } else if (e.target.classList.contains('btn-delete') || e.target.closest('.btn-delete')) {
+            const btn = e.target.classList.contains('btn-delete') ? e.target : e.target.closest('.btn-delete');
+            eliminarPelicula(btn.dataset.nombre);
         }
     });
 
-    // Función para cargar películas
-    function cargarPeliculas(query = "") {
-        const url = query ? `/peliculas/?search=${encodeURIComponent(query)}` : "/peliculas/";
-        
-        fetch(url, { 
-            headers: { "X-Requested-With": "XMLHttpRequest" } 
+    // Funciones CRUD
+    function cargarPeliculas(search = '') {
+        let url = '/peliculas/';
+        if (search) {
+            url += `?search=${encodeURIComponent(search)}`;
+        }
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         })
         .then(response => response.json())
         .then(data => {
-            tbody.innerHTML = "";
+            tablaPeliculas.innerHTML = '';
             data.forEach(pelicula => {
-                const generos = typeof pelicula.generos === "string" ? 
-                               pelicula.generos.split(",") : 
-                               pelicula.generos;
-
-                const row = document.createElement("tr");
-                row.dataset.nombre = pelicula.nombre;
-                row.innerHTML = `
+                const tr = document.createElement('tr');
+                tr.dataset.nombre = pelicula.nombre;
+                tr.innerHTML = `
                     <td>${pelicula.nombre}</td>
                     <td>${pelicula.anio}</td>
                     <td>${pelicula.director}</td>
-                    <td>${generos.map(g => g.trim()).join(", ")}</td>
+                    <td>${pelicula.generos}</td>
+                    <td>${pelicula.horarios}</td>
+                    <td>${pelicula.salas}</td>
                     <td class="action-buttons">
                         <button type="button" class="btn btn-edit" data-nombre="${pelicula.nombre}">
                             <i class="fas fa-edit"></i> Editar
@@ -223,12 +79,265 @@ document.addEventListener("DOMContentLoaded", function() {
                         </button>
                     </td>
                 `;
-                tbody.appendChild(row);
+                tablaPeliculas.appendChild(tr);
             });
         })
         .catch(error => {
-            console.error("Error al cargar películas:", error);
-            mostrarMensaje("Error al cargar películas", 'danger');
+            mostrarMensaje('Error al cargar las películas', 'error');
+            console.error('Error:', error);
         });
+    }
+
+    function crearPelicula() {
+        const formData = new FormData(form);
+        const data = {
+            nombre: formData.get('nombre'),
+            anio: formData.get('anio'),
+            director: formData.get('director'),
+            imagen_url: formData.get('imagen_url'),
+            trailer_url: formData.get('trailer_url'),
+            generos: Array.from(document.querySelectorAll('input[name="generos"]:checked')).map(cb => cb.value),
+            horarios: Array.from(document.querySelectorAll('input[name="horarios"]:checked')).map(cb => cb.value),
+            salas: Array.from(document.querySelectorAll('input[name="salas"]:checked')).map(cb => cb.value)
+        };
+
+        // Validación del lado del cliente
+        if (!validarFormulario(data)) return;
+
+        fetch('/peliculas/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                mostrarMensaje(data.error, 'error');
+            } else {
+                mostrarMensaje(data.message, 'success');
+                form.reset();
+                cargarPeliculas();
+            }
+        })
+        .catch(error => {
+            mostrarMensaje('Error al guardar la película', 'error');
+            console.error('Error:', error);
+        });
+    }
+
+    function editarPelicula(nombre) {
+        fetch(`/peliculas/?nombre=${encodeURIComponent(nombre)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const pelicula = data.data;
+                modoEdicion = true;
+                nombreOriginal = pelicula.nombre;
+                
+                // Llenar el formulario
+                document.getElementById('nombre').value = pelicula.nombre;
+                document.getElementById('anio').value = pelicula.anio;
+                document.getElementById('director').value = pelicula.director;
+                document.getElementById('imagen_url').value = pelicula.imagen_url;
+                document.getElementById('trailer_url').value = pelicula.trailer_url;
+                document.getElementById('nombre-original').value = pelicula.nombre;
+                document.getElementById('accion').value = 'editar';
+
+                // Marcar géneros
+                document.querySelectorAll('input[name="generos"]').forEach(cb => {
+                    cb.checked = pelicula.generos.includes(cb.value);
+                });
+
+                // Marcar horarios
+                document.querySelectorAll('input[name="horarios"]').forEach(cb => {
+                    cb.checked = pelicula.horarios.includes(cb.value);
+                });
+
+                // Marcar salas
+                document.querySelectorAll('input[name="salas"]').forEach(cb => {
+                    cb.checked = pelicula.salas.includes(cb.value);
+                });
+
+                // Cambiar botones
+                btnGuardar.style.display = 'none';
+                btnCancelar.style.display = 'inline-block';
+                btnGuardarCambios.style.display = 'inline-block';
+
+                // Desplazarse al formulario
+                form.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                mostrarMensaje(data.error, 'error');
+            }
+        })
+        .catch(error => {
+            mostrarMensaje('Error al cargar la película para edición', 'error');
+            console.error('Error:', error);
+        });
+    }
+
+    function guardarCambios() {
+        const formData = new FormData(form);
+        const data = {
+            nombre: formData.get('nombre'),
+            anio: formData.get('anio'),
+            director: formData.get('director'),
+            imagen_url: formData.get('imagen_url'),
+            trailer_url: formData.get('trailer_url'),
+            generos: Array.from(document.querySelectorAll('input[name="generos"]:checked')).map(cb => cb.value),
+            horarios: Array.from(document.querySelectorAll('input[name="horarios"]:checked')).map(cb => cb.value),
+            salas: Array.from(document.querySelectorAll('input[name="salas"]:checked')).map(cb => cb.value),
+            nombre_original: nombreOriginal
+        };
+
+        // Validación del lado del cliente
+        if (!validarFormulario(data)) return;
+
+        fetch('/peliculas/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                'X-Method': 'PUT'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                mostrarMensaje(data.error, 'error');
+            } else {
+                mostrarMensaje(data.message, 'success');
+                cancelarEdicion();
+                cargarPeliculas();
+            }
+        })
+        .catch(error => {
+            mostrarMensaje('Error al actualizar la película', 'error');
+            console.error('Error:', error);
+        });
+    }
+
+    function eliminarPelicula(nombre) {
+        if (!confirm(`¿Estás seguro de que deseas eliminar la película "${nombre}"?`)) {
+            return;
+        }
+
+        fetch('/peliculas/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value,
+                'X-Method': 'DELETE'
+            },
+            body: JSON.stringify({ nombre: nombre })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                mostrarMensaje(data.error, 'error');
+            } else {
+                mostrarMensaje(data.message, 'success');
+                cargarPeliculas();
+            }
+        })
+        .catch(error => {
+            mostrarMensaje('Error al eliminar la película', 'error');
+            console.error('Error:', error);
+        });
+    }
+
+    function cancelarEdicion() {
+        modoEdicion = false;
+        form.reset();
+        btnGuardar.style.display = 'inline-block';
+        btnCancelar.style.display = 'none';
+        btnGuardarCambios.style.display = 'none';
+        document.getElementById('accion').value = 'crear';
+    }
+
+    function buscarPeliculas() {
+        const searchTerm = inputBuscar.value.trim();
+        cargarPeliculas(searchTerm);
+    }
+
+    function validarFormulario(data) {
+        // Validar nombre
+        if (!data.nombre || data.nombre.trim() === '') {
+            mostrarMensaje('El nombre de la película es requerido', 'error');
+            return false;
+        }
+
+        // Validar año
+        if (!data.anio || isNaN(data.anio) {
+            mostrarMensaje('El año debe ser un número válido', 'error');
+            return false;
+        }
+
+        const year = parseInt(data.anio);
+        if (year < 1900 || year > new Date().getFullYear() + 5) {
+            mostrarMensaje(`El año debe estar entre 1900 y ${new Date().getFullYear() + 5}`, 'error');
+            return false;
+        }
+
+        // Validar director
+        if (!data.director || data.director.trim() === '') {
+            mostrarMensaje('El director es requerido', 'error');
+            return false;
+        }
+
+        // Validar géneros
+        if (data.generos.length === 0) {
+            mostrarMensaje('Selecciona al menos un género', 'error');
+            return false;
+        }
+
+        if (data.generos.length > 3) {
+            mostrarMensaje('Solo puedes seleccionar hasta 3 géneros', 'error');
+            return false;
+        }
+
+        // Validar horarios
+        if (data.horarios.length === 0) {
+            mostrarMensaje('Selecciona al menos un horario', 'error');
+            return false;
+        }
+
+        // Validar salas
+        if (data.salas.length === 0) {
+            mostrarMensaje('Selecciona al menos una sala', 'error');
+            return false;
+        }
+
+        // Validar URLs
+        if (!data.imagen_url || !validarURL(data.imagen_url)) {
+            mostrarMensaje('La URL de la imagen no es válida', 'error');
+            return false;
+        }
+
+        if (!data.trailer_url || !validarURL(data.trailer_url)) {
+            mostrarMensaje('La URL del trailer no es válida', 'error');
+            return false;
+        }
+
+        return true;
+    }
+
+    function validarURL(url) {
+        try {
+            new URL(url);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function mostrarMensaje(mensaje, tipo = 'success') {
+        mensajesDiv.innerHTML = `<div class="message ${tipo}">${mensaje}</div>`;
+        setTimeout(() => {
+            mensajesDiv.innerHTML = '';
+        }, 5000);
     }
 });
