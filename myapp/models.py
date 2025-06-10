@@ -1,4 +1,5 @@
 from django.db import models
+from django.forms import ValidationError
 from django.urls import reverse
 
 # Create your models here.
@@ -19,7 +20,7 @@ class Pelicula(models.Model):
     HORARIOS_DISPONIBLES = [
         '09:30 AM',
         '10:00 AM',
-        '12:00 AM',
+        '12:00 PM',
         '01:30 PM',
         '3:00 PM',
         '5:00 PM',
@@ -60,3 +61,58 @@ class Pelicula(models.Model):
 
     class Meta:
         db_table = 'peliculas'
+
+
+
+
+class Reserva(models.Model):
+    FORMATO_CHOICES = [
+        ('2D', '2D - $3.50'),
+        ('3D', '3D - $4.50'),
+        ('IMAX', 'IMAX - $6.00'),
+    ]
+    
+    ESTADO_CHOICES = [
+        ('RESERVADO', 'Reservado'),
+        ('CONFIRMADO', 'Confirmado'),
+        ('CANCELADO', 'Cancelado'),
+    ]
+    
+    pelicula = models.ForeignKey(Pelicula, on_delete=models.CASCADE)
+    nombre_cliente = models.CharField(max_length=100)
+    apellido_cliente = models.CharField(max_length=100)
+    email = models.EmailField()
+    formato = models.CharField(max_length=4, choices=FORMATO_CHOICES)
+    sala = models.CharField(max_length=50)
+    horario = models.CharField(max_length=50)
+    asientos = models.CharField(max_length=255)
+    cantidad_boletos = models.PositiveIntegerField(default=1)
+    precio_total = models.DecimalField(max_digits=6, decimal_places=2)
+    estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='RESERVADO')
+    fecha_reserva = models.DateTimeField(auto_now_add=True)
+    codigo_reserva = models.CharField(max_length=10, unique=True)
+
+    def __str__(self):
+        return f"Reserva #{self.codigo_reserva} - {self.pelicula.nombre}"
+
+    def clean(self):
+        super().clean()
+        if self.cantidad_boletos != len(self.asientos.split(',')):
+            raise ValidationError("La cantidad de boletos no coincide con los asientos seleccionados")
+        if self.cantidad_boletos > 10:
+            raise ValidationError("No se pueden reservar más de 10 boletos por transacción")
+
+    def save(self, *args, **kwargs):
+        if not self.codigo_reserva:
+            self.codigo_reserva = self.generar_codigo()
+        super().save(*args, **kwargs)
+    
+    def generar_codigo(self):
+        import random
+        import string
+        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+
+    class Meta:
+        db_table = 'reservas'
+        verbose_name = 'Reserva'
+        verbose_name_plural = 'Reservas'

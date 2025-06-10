@@ -1,14 +1,39 @@
+from io import BytesIO
 import json
+from multiprocessing import context
+import random
+import string
+from tkinter import CENTER, Canvas
+from turtle import color
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from DSI2025 import settings
 from .forms import *
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Pelicula
-from django.http import JsonResponse
+from .models import Pelicula, Reserva
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import Paragraph, Table, TableStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, PageBreak
+)
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from io import BytesIO
+from django.conf import settings
+import os
+from datetime import datetime
+
 
 # Diccionario de géneros con nombres completos
 GENERO_CHOICES_DICT = {
@@ -61,11 +86,271 @@ def my_login(request):
     
     return render(request, 'registration/login.html')
 
-def asientos(request):
-    titulo = "Bienvenido al proyecto Django"
-    return render(request, "asientos.html", {
-        "titulo": titulo
-    })
+#######################################################################
+
+@csrf_exempt
+def asientos(request, pelicula_id=None):
+    # Obtener la película seleccionada
+    pelicula = get_object_or_404(Pelicula, pk=pelicula_id) if pelicula_id else None
+    
+    if not pelicula:
+        messages.error(request, "No se ha seleccionado ninguna película")
+        return redirect('index')
+    
+    if request.method == 'POST':
+        nombre_cliente = request.POST.get('nombre_cliente', '').strip()
+        apellido_cliente = request.POST.get('apellido_cliente', '').strip()
+        email = request.POST.get('email', '').strip()
+        formato = request.POST.get('formato', '').strip()
+        horario = request.POST.get('horario', '').strip()
+        sala = request.POST.get('sala', '').strip()
+        asientos_seleccionados = request.POST.get('asientos', '').strip()
+        
+        errores = []
+        
+        if not nombre_cliente: errores.append('El nombre es obligatorio')
+        if not apellido_cliente: errores.append('El apellido es obligatorio')
+        if not email or '@' not in email: errores.append('Ingrese un email válido')
+        if not formato or formato not in dict(Reserva.FORMATO_CHOICES).keys(): errores.append('Seleccione un formato válido')
+        if not horario or horario not in pelicula.get_horarios_list(): errores.append('Seleccione un horario válido')
+        if not sala or sala not in pelicula.get_salas_list(): errores.append('Seleccione una sala válida')
+        if not asientos_seleccionados: errores.append('Seleccione al menos un asiento')
+        
+        if not errores:
+            try:
+                precio_por_boleto = {
+                    '2D': 3.50,
+                    '3D': 4.50,
+                    'IMAX': 6.00
+                }.get(formato, 0)
+                
+                cantidad_boletos = len(asientos_seleccionados.split(','))
+                precio_total = precio_por_boleto * cantidad_boletos
+                
+                reserva = Reserva(
+                    pelicula=pelicula,
+                    nombre_cliente=nombre_cliente,
+                    apellido_cliente=apellido_cliente,
+                    email=email,
+                    formato=formato,
+                    sala=sala,
+                    horario=horario,
+                    asientos=asientos_seleccionados,
+                    cantidad_boletos=cantidad_boletos,
+                    precio_total=precio_total,
+                    estado='RESERVADO'
+                )
+                
+                reserva.codigo_reserva = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+                reserva.save()
+                
+                # Generar PDF
+                pdf_buffer = generar_pdf_reserva(reserva)
+                
+                # Crear respuesta
+                response = HttpResponse(pdf_buffer, content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="ticket_{reserva.codigo_reserva}.pdf"'
+                
+                # Guardar mensaje en sesión para mostrarlo después
+                request.session['reserva_message'] = f'¡Reserva exitosa! Código: {reserva.codigo_reserva}'
+                
+                return response
+                
+            except Exception as e:
+                messages.error(request, f'Error al crear la reserva: {str(e)}')
+        else:
+            for error in errores:
+                messages.error(request, error)
+    
+    # Mostrar mensaje de reserva exitosa si existe
+    if 'reserva_message' in request.session:
+        messages.success(request, request.session['reserva_message'])
+        del request.session['reserva_message']
+    
+    context = {
+        'pelicula': pelicula,
+        'formatos': Reserva.FORMATO_CHOICES,
+    }
+    return render(request, "asientos.html", context)
+
+#################################################################
+
+
+def generar_pdf_reserva(reserva):
+    buffer = BytesIO()
+    
+    # Obtener fecha y hora actual del sistema
+    ahora = datetime.now()
+    fecha_emision = ahora.strftime('%d/%m/%Y %H:%M:%S')
+
+    # Configurar el documento
+    doc = SimpleDocTemplate(buffer, pagesize=letter,
+                          rightMargin=72, leftMargin=72,
+                          topMargin=72, bottomMargin=72)
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    
+    # Crear estilos personalizados
+    title_style = ParagraphStyle(
+        'Title',
+        parent=styles['Title'],
+        fontSize=20,
+        leading=24,
+        spaceAfter=20,
+        alignment=1,
+        textColor=colors.HexColor('#2c3e50')
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        leading=18,
+        spaceAfter=12,
+        alignment=1,
+        textColor=colors.HexColor('#3498db')
+    )
+    
+    info_style = ParagraphStyle(
+        'Info',
+        parent=styles['Normal'],
+        fontSize=12,
+        leading=15,
+        spaceAfter=8
+    )
+    
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=10,
+        leading=12,
+        textColor=colors.grey,
+        alignment=1
+    )
+    
+    # Contenido del PDF
+    elements = []
+    
+    # Logo
+    logo_path = os.path.abspath(os.path.join(settings.BASE_DIR, 'myapp', 'static', 'imagenes', 'cine.jpg'))
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=2*inch, height=1*inch)
+        elements.append(logo)
+    
+    # Título
+    elements.append(Paragraph("CineDot", title_style))
+    elements.append(Paragraph("Ticket de Reserva", subtitle_style))
+    elements.append(Spacer(1, 20))
+    
+    # Información de emisión
+    emision_data = [
+        [Paragraph("<b>Fecha de emisión:</b>", info_style), 
+         Paragraph(fecha_emision, info_style)]
+    ]
+    
+    emision_table = Table(emision_data, colWidths=[1.5*inch, 4*inch])
+    emision_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('ALIGN', (0,0), (0,-1), 'RIGHT'),
+        ('ALIGN', (1,0), (1,-1), 'LEFT'),
+        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 12),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 12),
+    ]))
+    elements.append(emision_table)
+    
+    # Información del cliente
+    cliente_data = [
+        [Paragraph("<b>Cliente:</b>", info_style), 
+         Paragraph(f"{reserva.nombre_cliente} {reserva.apellido_cliente}", info_style)],
+        [Paragraph("<b>Email:</b>", info_style), 
+         Paragraph(reserva.email, info_style)],
+    ]
+    
+    cliente_table = Table(cliente_data, colWidths=[1.5*inch, 4*inch])
+    cliente_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('ALIGN', (0,0), (0,-1), 'RIGHT'),
+        ('ALIGN', (1,0), (1,-1), 'LEFT'),
+        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 12),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+    elements.append(cliente_table)
+    elements.append(Spacer(1, 20))
+    
+    # Información de la reserva
+    reserva_data = [
+        [Paragraph("<b>Código de reserva:</b>", info_style), 
+         Paragraph(reserva.codigo_reserva, info_style)],
+        [Paragraph("<b>Fecha de reserva:</b>", info_style), 
+         Paragraph(reserva.fecha_reserva.strftime('%d/%m/%Y %H:%M'), info_style)],
+        [Paragraph("<b>Película:</b>", info_style), 
+         Paragraph(reserva.pelicula.nombre, info_style)],
+        [Paragraph("<b>Formato:</b>", info_style), 
+         Paragraph(reserva.get_formato_display(), info_style)],
+        [Paragraph("<b>Sala:</b>", info_style), 
+         Paragraph(reserva.sala, info_style)],
+        [Paragraph("<b>Horario:</b>", info_style), 
+         Paragraph(reserva.horario, info_style)],
+        [Paragraph("<b>Asientos:</b>", info_style), 
+         Paragraph(reserva.asientos, info_style)],
+        [Paragraph("<b>Cantidad de boletos:</b>", info_style), 
+         Paragraph(str(reserva.cantidad_boletos), info_style)],
+        [Paragraph("<b>Total:</b>", info_style), 
+         Paragraph(f"${reserva.precio_total:.2f}", info_style)],
+    ]
+    
+    reserva_table = Table(reserva_data, colWidths=[1.5*inch, 4*inch])
+    reserva_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('ALIGN', (0,0), (0,-1), 'RIGHT'),
+        ('ALIGN', (1,0), (1,-1), 'LEFT'),
+        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 12),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('GRID', (0,0), (-1,-2), 1, colors.lightgrey),
+        ('GRID', (0,-1), (-1,-1), 1, colors.HexColor('#3498db')),
+        ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor('#f8f9fa')),
+    ]))
+    elements.append(reserva_table)
+    elements.append(Spacer(1, 30))
+    
+    # Mensaje de agradecimiento
+    elements.append(Paragraph("Presente este ticket en la entrada del cine", footer_style))
+    elements.append(Paragraph("¡Gracias por su preferencia!", footer_style))
+    
+    # Construir el PDF
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
+
+
+def descargar_ticket(request, codigo_reserva):
+    reserva = get_object_or_404(Reserva, codigo_reserva=codigo_reserva)
+    pdf_buffer = generar_pdf_reserva(reserva)
+
+    # Generar la URL usando reverse
+    asientos_url = reverse('asientos', kwargs={'pelicula_id': reserva.pelicula.id})
+    
+    response = HttpResponse(pdf_buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="ticket_{reserva.codigo_reserva}.pdf"'
+    
+    # Agregar script JavaScript para redirección
+    response.write(
+        '<script>'
+        'window.addEventListener("load", function() {'
+        '  setTimeout(function() {'
+        f'    window.location.href = "{asientos_url}";'
+        '  }, 1000);'
+        '});'
+        '</script>'
+    )
+    
+    
+    return render(request, "asientos.html", context)
+##########################################################################
 
 @csrf_exempt
 def peliculas(request):

@@ -16,15 +16,13 @@
         <nav>
             <ul>
                 <li><a href="#cartelera">Cartelera</a></li>
-                <li><a href="#comprar">Comprar Boletos</a></li>
+
                 <li><a href="#contacto">Contacto</a></li>
                 
                 {% if user.is_authenticated %}
                     {% if user.is_staff %}
                     <li><a href="{% url 'login' %}" class="admin-btn">Panel Admin</a></li>
                     {% endif %}
-                    <li class="user-welcome">¡Hola, {{ user.first_name }}!</li>
-                    <li><a href="{% url 'logout' %}" class="logout-btn">Cerrar Sesión</a></li>
                 {% else %}
                     <li><a href="{% url 'login' %}" class="login-btn">Iniciar Sesión</a></li>
                 {% endif %}
@@ -49,27 +47,24 @@
                             <p><span class="detail-label">Género:</span> {{ pelicula.get_generos_list|join:", " }}</p>
                             <p><span class="detail-label">Año:</span> {{ pelicula.anio }}</p>
                             <p><span class="detail-label">Director:</span> {{ pelicula.director }}</p>
+                            <p><span class="detail-label">Sala:</span> {{ pelicula.get_salas_list|join:", " }}</p>
+                            <p><span class="detail-label">Horarios:</span> {{ pelicula.get_horarios_list|join:", " }}</p>
                         </div>
-                        <a href="{{ pelicula.trailer_url }}" target="_blank" class="trailer-btn">
-                            <i class="fab fa-youtube"></i> Ver Tráiler
-                        </a>
+                            <div class="movie-actions">
+                            <a href="{{ pelicula.trailer_url }}" target="_blank" class="trailer-btn">
+                                <i class="fab fa-youtube"></i> Ver Tráiler
+                            </a>
+                            <a href="{% url 'asientos' pelicula.id %}" class="buy-btn">
+                                <i class="fas fa-ticket-alt"></i> Comprar Boleto
+                            </a>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
         </section>
 
-        <!-- Sección de Compra -->
-        <section id="comprar" class="section">
-            <h2 class="section-title">Compra tus Boletos</h2>
-            <div class="compra-form">
-                {% if not user.is_authenticated %}
-                <div class="login-alert">
-                    <p>Para comprar boletos, por favor <a href="{% url 'login' %}">inicia sesión</a></p>
-                </div>
-                {% endif %}
-            </div>
-        </section>
+
 
         <!-- Sección de Contacto -->
         <section id="contacto" class="section">
