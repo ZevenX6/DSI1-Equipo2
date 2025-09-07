@@ -62,6 +62,9 @@ class Pelicula(models.Model):
     class Meta:
         db_table = 'peliculas'
 
+    # models.py
+usado = models.BooleanField(default=False)
+
 
 
 
@@ -91,6 +94,7 @@ class Reserva(models.Model):
     estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='RESERVADO')
     fecha_reserva = models.DateTimeField(auto_now_add=True)
     codigo_reserva = models.CharField(max_length=10, unique=True)
+    usado = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Reserva #{self.codigo_reserva} - {self.pelicula.nombre}"
@@ -116,3 +120,4 @@ class Reserva(models.Model):
         db_table = 'reservas'
         verbose_name = 'Reserva'
         verbose_name_plural = 'Reservas'
+
